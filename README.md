@@ -2,10 +2,15 @@
 PowerShell script for "Zoom Meetings" menu
 
 A simple Script to manage you Zoom Meetings 
+
 The script loads the meetings information from a text file, then print the menu and let you choose your action
+
 Actions are: 
+
   a. Open a zoom meeting
+  
   b. Add new meeting information
+  
   c. Delete meeting information
 
 
