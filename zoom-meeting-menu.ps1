@@ -1,10 +1,10 @@
 
+
 # PLEASE NOTICE !   
 # If Meeting's password are confidential, be a programmer and add a code section where you ask the user for the Meeting's password
 # DO NOT (EVER!) WRITE  CONFIDENTIAL INFORMATION IN A SIMPLE PLAINTEXT FILE!
 
 # Edit the $ConfUserName variable as the name you want to login with to the Zoom Meeting
-
 
 # General usage.
 $NameLocation = 0
@@ -31,14 +31,13 @@ function Get-Meetings-From-File {
     $File = Get-Content $FullFileName
     foreach($Line in $File){
         $NLine = $Line.Split(",")
-        $Meetings.Add(@($NLine[0], $NLine[1], $NLine[2])) 
+        $Meetings.Add(@($NLine[$NameLocation], $NLine[$ConfNumberLocation], $NLine[$ConfPasswordLocation])) 
     }
 }
 
 
 # Currently Just callting Get-Meetings-From-File. Might be usefull someday to add more content
 function Update-File-Content {
-	
     Get-Meetings-From-File
 }
 
@@ -63,19 +62,29 @@ function Add-Meeting-Entry-To-File {
 	
 	# add content to file
 	Add-Content $FullFileName -Value $Meeting
-
 }
 
 
 # Delete meeting by line number
 function Delete-Meetings-Entry-From-File($LineToRemove) {
-
-    $File
     # Get File content and store it into $content variable
     $content = Get-Content $FullFileName | Where-Object ReadCount -notin $LineToRemove
     
     # Set the new content
     $content | Set-Content -Path $FullFileName
+}
+
+
+function Delete-All-Meetings-Entries-From-File {
+	# Delete file content
+	Clear-Content -Path $FullFileName
+	
+	# Check file content indead deleted
+	if ([String]::IsNullorWhiteSpace((Get-Content  -Path  $FullFileName))){
+		Write-Host "Deleted all meetings entries!"
+	} else {
+		Write-Host "Unexpacted Error!"
+	}
 }
 
 
@@ -95,24 +104,31 @@ function Write-Menu-Ending($Index) {
 	Write-Host $Index": Add a new Meeting."
     $Index++
     Write-Host $Index": Delete Meeting."
-    $Index++
+	$Index++
+    Write-Host $Index": Delete All Meetings."
+	$Index++
 }
 
-
-# Display menu 
-function Show-Menu {
-
-    Clear-Host
-    Write-Menu-Beginning
-
-    $MenuIndex = 0
-
+function Write-Meeting-Menu($MenuIndex) {
     Foreach ($Meeting in $Meetings)
     {
         Write-Host $MenuIndex": Start" $Meeting[0] "Meeting."
         $MenuIndex++
         
     }
+	
+	return $MenuIndex
+}
+
+# Display menu 
+function Show-Menu {
+    $MenuIndex = 0
+	Clear-Host
+    Write-Menu-Beginning
+	
+	
+	$MenuIndex = Write-Meeting-Menu($MenuIndex)
+
     Write-Menu-Ending($MenuIndex)
     Write-Host "Q: Enter 'Q' or 'q' to quit."
 }
@@ -131,7 +147,7 @@ do
 
     $Selection = Read-Host "`nChoose option"
 
-	# f input is numeric and not empty keep going
+	# If input is numeric and not empty keep going
     if (($Selection -as [int]) -match "^\d+$"  -And  $Selection -ne [string]::empty) {
         $Selection = ($Selection -as [int])
 
@@ -145,6 +161,18 @@ do
             $MeetingToDelete = Read-Host "`nChoose Meeting number from above list"
 		    Delete-Meetings-Entry-From-File(($MeetingToDelete -as [int]) +1 )
             Update-File-Content
+            
+		# if  input is inside Meeting length range, launch Zoom meeting
+        }elseif ($Selection -eq ($Meetings.count+2)) {
+			# do not allow empty name
+			do {
+				$DeleteConfirmation = Read-Host "`nAre you absolutely sure? y/n"
+			} until($DeleteConfirmation  -ne [string]::empty)
+
+			if($DeleteConfirmation -eq 'y'){
+				Delete-All-Meetings-Entries-From-File
+				Update-File-Content
+			}
             
 		# if  input is inside Meeting length range, launch Zoom meeting
         }elseif ($Selection -ge 0 -And $Selection -lt $Meetings.count) {
